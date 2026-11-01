@@ -1,0 +1,22 @@
+{
+  "moving_major_tag": false,
+  "version_files": [
+    {
+      "path": "VERSION",
+      "pattern": "^[0-9][^\\n]*$",
+      "replacement": "$VERSION",
+      "verify": "^$VERSION$"
+    }
+  ],
+  "release_files": [
+    "Casks/openwell.rb"
+  ],
+  "release_assets": [
+    "OpenWell-*.zip"
+  ],
+  "exceptions": {
+    "homebrew": "a macOS .app delivered as a Homebrew cask (Casks/openwell.rb); the rule expects a formula, raised as a question to the standard",
+    "linux-packages": "a macOS Dock app built on Accessibility and AppKit; it has no Linux build",
+    "man-page": "a Dock app; its one option, --spot, serves the WezTerm binding the README documents"
+  }
+}

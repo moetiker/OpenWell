@@ -1,0 +1,166 @@
+name: Release build (OpenWell)
+
+# OpenWell's own release build, called from release-build.yml. It builds the
+# universal OpenWell.app with the Makefile, signs it with the Developer ID
+# Application certificate, notarizes and staples it, and ships
+# OpenWell-<version>.zip together with Casks/openwell.rb pointing at that zip.
+# The steps are the ones `make notarize cask` runs on a developer machine, with
+# an App Store Connect API key instead of a notarytool keychain profile.
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: The version being released.
+        type: string
+        required: true
+      ref:
+        description: The release branch head to build.
+        type: string
+        required: true
+    secrets:
+      MACOS_CERTIFICATE_P12:
+        description: The Developer ID Application certificate with its private key, a .p12 file in base64.
+        required: true
+      MACOS_CERTIFICATE_PASSWORD:
+        description: The password of the .p12 file.
+        required: true
+      NOTARY_API_KEY_ID:
+        description: The key ID of the App Store Connect API key.
+        required: true
+      NOTARY_API_ISSUER_ID:
+        description: The issuer ID of the App Store Connect API key.
+        required: true
+      NOTARY_API_KEY_P8:
+        description: The App Store Connect API key, the content of the AuthKey_<id>.p8 file.
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    name: Signed and notarized app
+    runs-on: macos-15
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ inputs.version }}
+      ZIP: build/OpenWell-${{ inputs.version }}.zip
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      # Create release PR has already written VERSION on the release branch;
+      # writing it again keeps the app and the zip name on the released version
+      # should the two ever differ.
+      - name: Set the version
+        run: |
+          case "$VERSION" in
+            [0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "::error::not a version: $VERSION"; exit 1 ;;
+          esac
+          echo "$VERSION" > VERSION
+
+      - name: Import the signing certificate
+        env:
+          P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          P12_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
+          echo "$P12" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$KEYCHAIN" \
+            -P "$P12_PASSWORD" -T /usr/bin/codesign
+          rm -f "$RUNNER_TEMP/certificate.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          security list-keychains -d user -s "$KEYCHAIN" \
+            $(security list-keychains -d user | tr -d '"')
+          IDENTITY="$(security find-identity -v -p codesigning "$KEYCHAIN" | \
+            sed -n 's/.*"\(Developer ID Application: .*\)"/\1/p' | head -1)"
+          if [ -z "$IDENTITY" ]; then
+            echo "::error::MACOS_CERTIFICATE_P12 holds no Developer ID Application identity"
+            exit 1
+          fi
+          echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+          echo "SIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+
+      - name: Build the universal app
+        run: |
+          make app SIGN_IDENTITY="$SIGN_IDENTITY"
+          lipo -archs build/OpenWell.app/Contents/MacOS/OpenWell
+          codesign --verify --strict --verbose=2 build/OpenWell.app
+
+      - name: Notarize and staple
+        env:
+          NOTARY_API_KEY_ID: ${{ secrets.NOTARY_API_KEY_ID }}
+          NOTARY_API_ISSUER_ID: ${{ secrets.NOTARY_API_ISSUER_ID }}
+          NOTARY_API_KEY_P8: ${{ secrets.NOTARY_API_KEY_P8 }}
+        run: |
+          KEY="$RUNNER_TEMP/notary-key.p8"
+          printf '%s\n' "$NOTARY_API_KEY_P8" > "$KEY"
+          make zip SIGN_IDENTITY="$SIGN_IDENTITY"
+          xcrun notarytool submit "$ZIP" --key "$KEY" --key-id "$NOTARY_API_KEY_ID" \
+            --issuer "$NOTARY_API_ISSUER_ID" --wait --timeout 30m \
+            --output-format json > "$RUNNER_TEMP/notary.json" || true
+          cat "$RUNNER_TEMP/notary.json"
+          STATUS="$(jq -r '.status // empty' "$RUNNER_TEMP/notary.json")"
+          if [ "$STATUS" != Accepted ]; then
+            ID="$(jq -r '.id // empty' "$RUNNER_TEMP/notary.json")"
+            if [ -n "$ID" ]; then
+              xcrun notarytool log "$ID" --key "$KEY" --key-id "$NOTARY_API_KEY_ID" \
+                --issuer "$NOTARY_API_ISSUER_ID" || true
+            fi
+            rm -f "$KEY"
+            echo "::error::notarization ended with status '${STATUS:-none}'"
+            exit 1
+          fi
+          rm -f "$KEY"
+          # stapler asks Apple's ticket server; see scripts/retry
+          scripts/retry xcrun stapler staple build/OpenWell.app
+          rm -f "$ZIP"
+          ditto -c -k --keepParent build/OpenWell.app "$ZIP"
+
+      # stapler and spctl ask Apple's ticket server; see scripts/retry. A real
+      # rejection fails all five tries and still stops the release.
+      - name: Verify the app
+        run: |
+          scripts/retry xcrun stapler validate build/OpenWell.app
+          scripts/retry spctl -a -t exec -vv build/OpenWell.app
+          rm -rf "$RUNNER_TEMP/unzipped"
+          ditto -x -k "$ZIP" "$RUNNER_TEMP/unzipped"
+          scripts/retry spctl -a -t exec -vv "$RUNNER_TEMP/unzipped/OpenWell.app"
+
+      # -o keeps make from rebuilding the zip, and with it the app, before it
+      # rewrites the cask from the zip's checksum.
+      - name: Point the cask at the zip
+        run: |
+          make -o "$ZIP" cask
+          mkdir -p "$RUNNER_TEMP/release-files/Casks"
+          cp Casks/openwell.rb "$RUNNER_TEMP/release-files/Casks/"
+          cat Casks/openwell.rb
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-asset-zip
+          path: ${{ env.ZIP }}
+          if-no-files-found: error
+
+      # upload-artifact strips the common parent of the paths, so the cask is
+      # staged under release-files/Casks/ to keep its repository path.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-files
+          path: ${{ runner.temp }}/release-files/
+          if-no-files-found: error
+
+      - name: Remove the signing keychain
+        if: always()
+        run: |
+          if [ -n "$KEYCHAIN" ]; then security delete-keychain "$KEYCHAIN" || true; fi
+          rm -f "$RUNNER_TEMP/notary-key.p8"
