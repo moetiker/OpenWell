@@ -12,6 +12,10 @@ OpenWell opens terminal windows from the Dock and puts every new terminal window
 free spot of the screen. A click on the Dock icon opens a new window in the terminal of
 your choice, and Cmd+N in the terminal gets the same placement.
 
+I like how window managers on Linux place a new window where it covers nothing. macOS
+opens it on top of the previous one. OpenWell brings the Linux way to terminal windows
+on the Mac.
+
 It runs on macOS 13 or later, on Apple silicon and Intel Macs.
 
 ## Install
