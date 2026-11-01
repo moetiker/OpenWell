@@ -85,7 +85,7 @@ click uses the same binding.
 
 ## Configuration
 
-`~/.config/openwell/config.json` is created on the first start. OpenWell reloads it when
+`~/Library/Application Support/OpenWell/config.json` is created on the first start. OpenWell reloads it when
 it changes.
 
 ```json

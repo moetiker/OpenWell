@@ -127,7 +127,7 @@ would fall back to least overlap.
 
 ## Configuration
 
-`~/.config/openwell/config.json`, created with defaults on first start and
+`~/Library/Application Support/OpenWell/config.json`, created with defaults on first start and
 reloaded when it changes. It holds data only.
 
 ```json

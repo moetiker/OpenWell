@@ -1,7 +1,7 @@
 import Foundation
 import OpenWellCore
 
-/// `~/.config/openwell/config.json`. It holds data only: OpenWell runs no command
+/// `~/Library/Application Support/OpenWell/config.json`. It holds data only: OpenWell runs no command
 /// from it, because a child process would inherit OpenWell's Accessibility permission
 /// and every process of the user can write this file.
 struct Config: Codable, Equatable {
@@ -10,8 +10,8 @@ struct Config: Codable, Equatable {
     var gap: Double = 10
     var anchor = Anchor.topLeft
 
-    static let url = FileManager.default.homeDirectoryForCurrentUser
-        .appendingPathComponent(".config/openwell/config.json")
+    static let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("OpenWell/config.json")
 
     init() {}
 
