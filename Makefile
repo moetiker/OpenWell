@@ -21,12 +21,13 @@ all: app
 
 app: $(APP)
 
-$(APP): $(SOURCES) App/Info.plist OpenWell.icns VERSION
+$(APP): $(SOURCES) App/Info.plist $(wildcard App/*.lproj/*) OpenWell.icns VERSION
 	swift build $(SWIFTFLAGS) $(UNIVERSAL) --product OpenWell
 	rm -rf $@ && mkdir -p $@/Contents/MacOS $@/Contents/Resources
 	cp "$$(swift build $(SWIFTFLAGS) $(UNIVERSAL) --show-bin-path)/OpenWell" $@/Contents/MacOS/OpenWell
 	sed -e 's/@VERSION@/$(VERSION)/g' App/Info.plist > $@/Contents/Info.plist
 	cp OpenWell.icns $@/Contents/Resources/
+	cp -R App/*.lproj $@/Contents/Resources/
 	# a failed signature would leave an unsigned bundle that make then counts as up to date
 	codesign $(SIGN_FLAGS) --sign "$(SIGN_IDENTITY)" $@ || { rm -rf $@; exit 1; }
 

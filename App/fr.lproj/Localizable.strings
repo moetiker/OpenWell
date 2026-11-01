@@ -1,0 +1,20 @@
+/* OpenWell user interface. The key is the English text. */
+
+"New Tab" = "Nouvel onglet";
+"Terminal: %@" = "Terminal : %@";
+"Open at Login" = "Ouvrir à l’ouverture de session";
+"Edit Config" = "Modifier la configuration";
+"About OpenWell" = "À propos d’OpenWell";
+"Hide OpenWell" = "Masquer OpenWell";
+"Quit OpenWell" = "Quitter OpenWell";
+"File" = "Fichier";
+"New Terminal Window" = "Nouvelle fenêtre de terminal";
+"New Terminal Tab" = "Nouvel onglet de terminal";
+"OpenWell needs Accessibility access" = "OpenWell a besoin de l’accès Accessibilité";
+"OpenWell opens and moves terminal windows through the Accessibility API. Allow it under System Settings > Privacy & Security > Accessibility. If OpenWell is listed but switched on, remove it with the minus button and start OpenWell again." = "OpenWell ouvre et déplace les fenêtres de terminal via l’API d’accessibilité. Autorisez-le dans Réglages Système > Confidentialité et sécurité > Accessibilité. Si OpenWell y est déjà activé, retirez-le avec le bouton moins et relancez OpenWell.";
+"Open System Settings" = "Ouvrir Réglages Système";
+"Later" = "Plus tard";
+"The configuration cannot be read" = "Impossible de lire la configuration";
+"%@ is not valid JSON. Fix it with Edit Config, then choose the terminal again." = "%@ n’est pas un JSON valide. Corrigez-le avec « Modifier la configuration », puis choisissez de nouveau le terminal.";
+"Terminal not found" = "Terminal introuvable";
+"No app with the bundle ID %@ is installed. Set \"terminal\" in %@." = "Aucune app avec l’identifiant de paquet %@ n’est installée. Définissez \"terminal\" dans %@.";

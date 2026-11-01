@@ -6,6 +6,8 @@
     <string>OpenWell</string>
     <key>CFBundleIdentifier</key>
     <string>ch.oetiker.OpenWell</string>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
     <key>CFBundleName</key>
     <string>OpenWell</string>
     <key>CFBundleShortVersionString</key>
