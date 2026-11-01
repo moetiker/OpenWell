@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private var configWatch: DispatchSourceFileSystemObject?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        Terminals.refresh()
         NSApp.mainMenu = mainMenu()
         watchConfig()
 
@@ -36,6 +37,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        Terminals.refresh()
         reloadConfig()
         let menu = NSMenu()
         // a click on the icon opens a window already
@@ -81,6 +83,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     /// Makes the chosen terminal the one a Dock click opens, and watches it.
     @objc func chooseTerminal(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? String else { return }
+        // saving now would replace the user's broken file with the defaults
+        guard Config.isReadable else {
+            let alert = NSAlert()
+            alert.messageText = "The configuration cannot be read"
+            alert.informativeText = "\(Config.url.path) is not valid JSON. Fix it with Edit Config, "
+                + "then choose the terminal again."
+            alert.runModal()
+            return
+        }
         reloadConfig()
         config.terminal = id
         if !config.manage.contains(id) { config.manage.append(id) }
@@ -89,7 +100,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     private func reloadConfig() {
-        Terminals.refresh()
         config = Config.load()
         placer.update(config)
     }
