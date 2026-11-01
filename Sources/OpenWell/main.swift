@@ -41,11 +41,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         reloadConfig()
         let menu = NSMenu()
         // a click on the icon opens a window already
-        menu.addItem(item("New Tab", #selector(newTab(_:))))
+        menu.addItem(item(L("New Tab"), #selector(newTab(_:))))
         menu.addItem(terminalItem())
         menu.addItem(.separator())
-        menu.addItem(item("Open at Login", #selector(toggleOpenAtLogin(_:))))
-        menu.addItem(item("Edit Config", #selector(editConfig(_:))))
+        menu.addItem(item(L("Open at Login"), #selector(toggleOpenAtLogin(_:))))
+        menu.addItem(item(L("Edit Config"), #selector(editConfig(_:))))
         return menu
     }
 
@@ -75,7 +75,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             entry.image?.size = NSSize(width: 16, height: 16)
             submenu.addItem(entry)
         }
-        let item = NSMenuItem(title: "Terminal: \(chosen)", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: String(format: L("Terminal: %@"), chosen), action: nil, keyEquivalent: "")
         item.submenu = submenu
         return item
     }
@@ -86,9 +86,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         // saving now would replace the user's broken file with the defaults
         guard Config.isReadable else {
             let alert = NSAlert()
-            alert.messageText = "The configuration cannot be read"
-            alert.informativeText = "\(Config.url.path) is not valid JSON. Fix it with Edit Config, "
-                + "then choose the terminal again."
+            alert.messageText = L("The configuration cannot be read")
+            alert.informativeText = String(format: L("%@ is not valid JSON. Fix it with Edit Config, "
+                + "then choose the terminal again."), Config.url.path)
             alert.runModal()
             return
         }
@@ -151,13 +151,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
     private func askForTrust() {
         let alert = NSAlert()
-        alert.messageText = "OpenWell needs Accessibility access"
-        alert.informativeText = "OpenWell opens and moves terminal windows through the "
+        alert.messageText = L("OpenWell needs Accessibility access")
+        alert.informativeText = L("OpenWell opens and moves terminal windows through the "
             + "Accessibility API. Allow it under System Settings > Privacy & Security > "
             + "Accessibility. If OpenWell is listed but switched on, remove it with the "
-            + "minus button and start OpenWell again."
-        alert.addButton(withTitle: "Open System Settings")
-        alert.addButton(withTitle: "Later")
+            + "minus button and start OpenWell again.")
+        alert.addButton(withTitle: L("Open System Settings"))
+        alert.addButton(withTitle: L("Later"))
         if alert.runModal() == .alertFirstButtonReturn {
             NSWorkspace.shared.open(AXTrust.settingsURL)
         }
@@ -187,21 +187,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         let main = NSMenu()
 
         let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "About OpenWell",
+        appMenu.addItem(withTitle: L("About OpenWell"),
                         action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         appMenu.addItem(.separator())
-        appMenu.addItem(item("Open at Login", #selector(toggleOpenAtLogin(_:))))
-        appMenu.addItem(item("Edit Config", #selector(editConfig(_:)), key: ","))
+        appMenu.addItem(item(L("Open at Login"), #selector(toggleOpenAtLogin(_:))))
+        appMenu.addItem(item(L("Edit Config"), #selector(editConfig(_:)), key: ","))
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "Hide OpenWell", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
-        appMenu.addItem(withTitle: "Quit OpenWell", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: L("Hide OpenWell"), action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        appMenu.addItem(withTitle: L("Quit OpenWell"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         let appItem = NSMenuItem()
         appItem.submenu = appMenu
         main.addItem(appItem)
 
-        let fileMenu = NSMenu(title: "File")
-        fileMenu.addItem(item("New Terminal Window", #selector(newWindow(_:)), key: "n"))
-        fileMenu.addItem(item("New Terminal Tab", #selector(newTab(_:)), key: "t"))
+        let fileMenu = NSMenu(title: L("File"))
+        fileMenu.addItem(item(L("New Terminal Window"), #selector(newWindow(_:)), key: "n"))
+        fileMenu.addItem(item(L("New Terminal Tab"), #selector(newTab(_:)), key: "t"))
         let fileItem = NSMenuItem()
         fileItem.submenu = fileMenu
         main.addItem(fileItem)
@@ -228,6 +228,12 @@ func printSpot() -> Int32 {
                                  excluding: nil, config: config) else { return 1 }
     print("\(Int(frame.minX)),\(Int(frame.minY))")
     return 0
+}
+
+/// The text for `key` in the language of the desktop, from `Localizable.strings` in the
+/// app bundle; English when the language has no translation.
+func L(_ key: String) -> String {
+    NSLocalizedString(key, comment: "")
 }
 
 if CommandLine.arguments.dropFirst().first == "--spot" {

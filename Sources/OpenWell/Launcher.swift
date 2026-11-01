@@ -33,9 +33,9 @@ enum Launcher {
         let id = config.terminal
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) else {
             let alert = NSAlert()
-            alert.messageText = "Terminal not found"
-            alert.informativeText = "No app with the bundle ID \(id) is installed. "
-                + "Set \"terminal\" in \(Config.url.path)."
+            alert.messageText = L("Terminal not found")
+            alert.informativeText = String(format: L("No app with the bundle ID %@ is installed. "
+                + "Set \"terminal\" in %@."), id, Config.url.path)
             alert.runModal()
             return
         }
