@@ -29,7 +29,11 @@ enum Terminals {
     /// written on these were exactly the three installed terminals; shell scripts and
     /// `ssh://` were no use, the first lists TextEdit and browsers, the second misses
     /// WezTerm.
-    private(set) static var discovered: [String] = scan()
+    ///
+    /// Empty until `refresh()` runs. The app scans at start, when the Dock menu opens
+    /// and when an unknown app launches; `OpenWell --spot` never scans, it runs on
+    /// every Cmd+N and the scan takes longer than the rest of it.
+    private(set) static var discovered: [String] = []
 
     static func refresh() {
         discovered = scan()

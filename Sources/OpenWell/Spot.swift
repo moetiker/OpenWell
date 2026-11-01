@@ -46,10 +46,15 @@ enum Spot {
     }
 
     /// True when `frame` lies inside a usable screen area and overlaps no other window:
-    /// a window the terminal already created at a free spot stays where it is.
-    static func isFree(_ frame: CGRect, excluding: CGWindowID?, config: Config) -> Bool {
+    /// a window the terminal already created at a free spot stays where it is. After a
+    /// Dock click the spot must also be on the screen under the mouse; a terminal
+    /// that opens its window on another screen would otherwise keep it there.
+    static func isFree(_ frame: CGRect, excluding: CGWindowID?, trigger: Trigger, config: Config) -> Bool {
         guard let screen = Screens.screen(of: frame),
             Screens.usableArea(of: screen).insetBy(dx: -1, dy: -1).contains(frame) else { return false }
+        if case .dock(let mouse) = trigger, Screens.screen(at: mouse).map({ $0 !== screen }) ?? false {
+            return false
+        }
         let others = WindowList.onScreen(excluding: excluding, managed: Terminals.managed(config))
         return Placement.overlap(frame, others.map { Obstacle($0.frame) }) == 0
     }

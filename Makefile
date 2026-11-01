@@ -27,7 +27,8 @@ $(APP): $(SOURCES) App/Info.plist OpenWell.icns VERSION
 	cp "$$(swift build $(SWIFTFLAGS) $(UNIVERSAL) --show-bin-path)/OpenWell" $@/Contents/MacOS/OpenWell
 	sed -e 's/@VERSION@/$(VERSION)/g' App/Info.plist > $@/Contents/Info.plist
 	cp OpenWell.icns $@/Contents/Resources/
-	codesign $(SIGN_FLAGS) --sign "$(SIGN_IDENTITY)" $@
+	# a failed signature would leave an unsigned bundle that make then counts as up to date
+	codesign $(SIGN_FLAGS) --sign "$(SIGN_IDENTITY)" $@ || { rm -rf $@; exit 1; }
 
 # An ad hoc signature changes with every build. macOS then keeps the Accessibility
 # entry of the old build, which shows as allowed while the new one gets no access, and

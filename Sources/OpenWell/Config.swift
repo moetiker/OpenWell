@@ -41,6 +41,13 @@ struct Config: Codable, Equatable {
         }
     }
 
+    /// False when the file exists but does not decode; `load()` then returns the
+    /// defaults, and saving them would overwrite the user's file.
+    static var isReadable: Bool {
+        guard let data = try? Data(contentsOf: url) else { return true }
+        return (try? JSONDecoder().decode(Config.self, from: data)) != nil
+    }
+
     func save() {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]

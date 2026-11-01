@@ -57,8 +57,13 @@ final class WindowPlacer {
     func update(_ config: Config) {
         guard config != self.config else { return }
         self.config = config
-        for pid in observers.keys { detach(pid) }
+        // a Dock click or a launch may be waiting for its window right now
+        for pid in observers.keys { detach(pid, keepState: true) }
         attachRunning()
+        for pid in Set(launchedAt.keys).union(expected.keys) where observers[pid] == nil {
+            launchedAt[pid] = nil
+            expected[pid] = nil
+        }
     }
 
     /// The next window of `pid` comes from a Dock click with the pointer at `mouse`.
@@ -103,7 +108,11 @@ final class WindowPlacer {
         }
     }
 
-    private func attach(_ pid: pid_t) {
+    /// How often `attach` retries when an app refuses the window notification.
+    private let attachRetries = 5
+
+    private func attach(_ pid: pid_t, retriesLeft: Int? = nil) {
+        let retriesLeft = retriesLeft ?? attachRetries
         guard observers[pid] == nil else { return }
         var observer: AXObserver?
         guard AXObserverCreate(pid, windowCreatedCallback, &observer) == .success, let observer else {
@@ -119,11 +128,13 @@ final class WindowPlacer {
         }
         CFRunLoopAddSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .defaultMode)
         observers[pid] = observer
-        if result != .success {
+        // an app that keeps refusing would otherwise be retried every 0.5 s as long
+        // as it runs; after the last retry it stays attached without the notification
+        if result != .success, retriesLeft > 0 {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                 guard let self, self.observers[pid] === observer else { return }
                 self.detach(pid, keepState: true)
-                self.attach(pid)
+                self.attach(pid, retriesLeft: retriesLeft - 1)
             }
         }
     }
@@ -176,12 +187,13 @@ final class WindowPlacer {
 
     private func place(_ window: AXUIElement, pid: pid_t, trigger: Trigger) {
         guard let frame = window.frame else { return }
-        let windowID = window.windowID
+        // without its id the new window would count as an obstacle to itself
+        let windowID = window.windowID ?? WindowList.id(of: pid, at: frame)
         let name = "window \(windowID.map(String.init) ?? "?") of process \(pid)"
         if case .dock = trigger { _ = DockClick.take() }
 
         // a terminal that asked `OpenWell --spot` created the window at its spot already
-        if Spot.isFree(frame, excluding: windowID, config: config) {
+        if Spot.isFree(frame, excluding: windowID, trigger: trigger, config: config) {
             Log.info("Left \(name) at \(frame): free already")
             return
         }
@@ -227,6 +239,23 @@ enum WindowList {
 
     // tool tips, drag images and status items are tiny or transparent and block no spot
     private static let minimumSide: CGFloat = 20
+
+    /// The id of the window of `pid` at `frame`, for an element the private id lookup
+    /// fails on.
+    static func id(of pid: pid_t, at frame: CGRect) -> CGWindowID? {
+        let info = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
+            as? [[String: Any]] ?? []
+        for w in info {
+            guard (w[kCGWindowOwnerPID as String] as? pid_t) == pid,
+                let bounds = w[kCGWindowBounds as String] as? NSDictionary,
+                let other = CGRect(dictionaryRepresentation: bounds),
+                abs(other.minX - frame.minX) < 1, abs(other.minY - frame.minY) < 1,
+                abs(other.width - frame.width) < 1, abs(other.height - frame.height) < 1
+            else { continue }
+            return w[kCGWindowNumber as String] as? CGWindowID
+        }
+        return nil
+    }
 
     static func onScreen(excluding excluded: CGWindowID?, managed: Set<String>) -> [Entry] {
         let info = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
