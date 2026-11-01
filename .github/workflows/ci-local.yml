@@ -1,0 +1,33 @@
+name: CI (OpenWell)
+
+# OpenWell's own CI jobs, called from ci.yml. The package needs Swift 6
+# (swift-tools-version 6.0), which comes with Xcode 16 on macos-15.
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: The commit to test; empty takes the commit that triggered the run.
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  swift-test:
+    name: swift test
+    runs-on: macos-15
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Show the toolchain
+        run: swift --version
+
+      - name: Run the tests
+        run: swift test

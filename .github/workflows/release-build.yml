@@ -1,0 +1,36 @@
+name: Release build
+
+# Called by Create release PR on the release branch before the pull request
+# exists (D28). No repo-infra piece builds a signed macOS app, so the build is
+# OpenWell's own release-build-local.yml: the notarized OpenWell-<version>.zip
+# and Casks/openwell.rb rewritten to point at it. Read-only: nothing here
+# writes the repository.
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: The version being released.
+        type: string
+        required: true
+      ref:
+        description: The release branch head to build.
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    uses: ./.github/workflows/release-build-local.yml
+    permissions:
+      contents: read
+    with:
+      version: ${{ inputs.version }}
+      ref: ${{ inputs.ref }}
+    secrets:
+      MACOS_CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+      MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+      NOTARY_API_KEY_ID: ${{ secrets.NOTARY_API_KEY_ID }}
+      NOTARY_API_ISSUER_ID: ${{ secrets.NOTARY_API_ISSUER_ID }}
+      NOTARY_API_KEY_P8: ${{ secrets.NOTARY_API_KEY_P8 }}

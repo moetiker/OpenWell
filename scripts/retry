@@ -1,0 +1,11 @@
+#!/bin/bash
+# Runs a command up to five times, pausing 15, 30, 45 and 60 seconds in between.
+# The release build uses it for stapler and spctl, which ask Apple's ticket server:
+# on the GitHub macOS runner the 0.1.3 release failed twice in a row with "The
+# network connection was lost" (stapler error 68) after Apple had accepted the app.
+for try in 1 2 3 4 5; do
+    "$@" && exit 0
+    echo "attempt $try of 5 failed: $*" >&2
+    [ "$try" -lt 5 ] && sleep $((try * 15))
+done
+exit 1
