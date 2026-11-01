@@ -58,11 +58,10 @@ the least overlap. Among equal spots, the one closest to the preferred corner wi
 Windows a terminal restores after a restart, and windows of a terminal in the
 background, stay where the terminal puts them.
 
-## WezTerm without a jump
+## WezTerm
 
-macOS reports a new window only once it is on screen, so OpenWell moves it after it
-appeared, and the move shows as a short jump. WezTerm can create the window at the
-free spot instead. Add this to `~/.wezterm.lua`, after `config.keys` is set:
+WezTerm can create the new window directly at the free spot. Add this to
+`~/.wezterm.lua`, after `config.keys` is set:
 
 ```lua
 local OPENWELL = '/Applications/OpenWell.app/Contents/MacOS/OpenWell'
