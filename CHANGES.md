@@ -16,6 +16,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 ### Fixed
+- `brew upgrade` quits OpenWell and starts the new version, which then opened a terminal window as if the Dock icon had been clicked. A start within a minute of a quit requested by another program now opens no window.
 
 ## 0.1.1 - 2026-11-03
 ### Fixed
