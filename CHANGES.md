@@ -12,6 +12,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### New
+- `About OpenWell` in the Dock menu. The panel shows the version, the author and a link to the repository.
 
 ### Changed
 
