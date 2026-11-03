@@ -1,7 +1,7 @@
 # Homebrew cask for OpenWell. This repository is its own tap.
 cask "openwell" do
-  version "0.1.0"
-  sha256 "9ca565f79f93b1594bb103d4be2da3fed002c838eff85333f5ae51816efe1ed2"
+  version "0.1.1"
+  sha256 "d2f92e56e84ea7e6941361ba05d6733015c6965c5d68a450706725d3fd74ca06"
 
   url "https://github.com/moetiker/OpenWell/releases/download/v#{version}/OpenWell-#{version}.zip"
   name "OpenWell"
