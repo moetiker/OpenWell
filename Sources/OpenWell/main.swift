@@ -46,6 +46,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         menu.addItem(.separator())
         menu.addItem(item(L("Open at Login"), #selector(toggleOpenAtLogin(_:))))
         menu.addItem(item(L("Edit Config"), #selector(editConfig(_:))))
+        menu.addItem(.separator())
+        menu.addItem(item(L("About OpenWell"), #selector(showAbout(_:))))
         return menu
     }
 
@@ -133,6 +135,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         }
     }
 
+    /// The standard panel with the version and the copyright from Info.plist, plus a
+    /// link to the repository. OpenWell is rarely frontmost, so it comes forward first.
+    @objc func showAbout(_ sender: Any?) {
+        let repo = "https://github.com/moetiker/OpenWell"
+        let style = NSMutableParagraphStyle()
+        style.alignment = .center
+        let credits = NSAttributedString(string: "github.com/moetiker/OpenWell", attributes: [
+            .link: URL(string: repo)!,
+            .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
+            .paragraphStyle: style,
+        ])
+        NSApp.activate(ignoringOtherApps: true)
+        // the build number equals the version; an empty one keeps it out of the panel
+        NSApp.orderFrontStandardAboutPanel(options: [.credits: credits, .version: ""])
+    }
+
     @objc func editConfig(_ sender: Any?) {
         if !FileManager.default.fileExists(atPath: Config.url.path) { config.save() }
         // open as plain text: a .json file may belong to an IDE that takes a while to start
@@ -187,8 +205,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         let main = NSMenu()
 
         let appMenu = NSMenu()
-        appMenu.addItem(withTitle: L("About OpenWell"),
-                        action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        appMenu.addItem(item(L("About OpenWell"), #selector(showAbout(_:))))
         appMenu.addItem(.separator())
         appMenu.addItem(item(L("Open at Login"), #selector(toggleOpenAtLogin(_:))))
         appMenu.addItem(item(L("Edit Config"), #selector(editConfig(_:)), key: ","))
