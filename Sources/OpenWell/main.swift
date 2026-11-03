@@ -13,6 +13,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         Terminals.refresh()
         NSApp.mainMenu = mainMenu()
         watchConfig()
+        NSAppleEventManager.shared().setEventHandler(
+            self, andSelector: #selector(handleQuit(_:withReply:)),
+            forEventClass: AEEventClass(kCoreEventClass), andEventID: AEEventID(kAEQuitApplication))
 
         let event = NSAppleEventManager.shared().currentAppleEvent
         let asLoginItem = event?.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue
@@ -25,9 +28,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             watchTrust()
         }
         // a start at login only watches; a start by hand is a click on the icon
-        if !asLoginItem {
+        let restart = Restart.take()
+        if restart { Log.info("Restarted after a requested quit, no window") }
+        if !asLoginItem && !restart {
             newWindow(nil)
         }
+    }
+
+    // replaces the handler of AppKit, which tells the delegate nothing about the sender
+    @objc func handleQuit(_ event: NSAppleEventDescriptor, withReply reply: NSAppleEventDescriptor) {
+        Restart.noteQuit(event)
+        NSApp.terminate(nil)
     }
 
     // a click on the Dock icon of the running app
