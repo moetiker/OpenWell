@@ -236,7 +236,25 @@ func L(_ key: String) -> String {
     NSLocalizedString(key, comment: "")
 }
 
+/// The app bundle runs `--spot` in `Contents/Helpers/openwell-spot`, a copy of this
+/// binary. Run as the bundle's own executable, the first screen query registers the
+/// process with LaunchServices as a second OpenWell, and its exit right after makes the
+/// Dock count OpenWell as quit: no dot, no Dock menu, clicks lost. The helper is not the
+/// main executable of any bundle, so it registers without a bundle id.
+func execSpotHelper() {
+    guard let exe = Bundle.main.executableURL,
+          exe.deletingLastPathComponent().lastPathComponent == "MacOS" else { return }
+    let helper = exe.deletingLastPathComponent().deletingLastPathComponent()
+        .appendingPathComponent("Helpers/openwell-spot").path
+    guard FileManager.default.isExecutableFile(atPath: helper) else { return }
+    let args = [helper] + CommandLine.arguments.dropFirst()
+    var argv = args.map { strdup($0) } + [nil]
+    execv(helper, &argv)
+    // execv returns only on failure; answer from this process then
+}
+
 if CommandLine.arguments.dropFirst().first == "--spot" {
+    execSpotHelper()
     exit(printSpot())
 }
 
