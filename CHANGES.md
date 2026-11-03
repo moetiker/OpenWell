@@ -16,6 +16,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 ### Fixed
+
+## 0.1.1 - 2026-11-03
+### Fixed
 - After a call of `OpenWell --spot`, such as Cmd+N with the WezTerm binding and often right after login, the Dock showed OpenWell as not running: no dot under the icon, no menu on a right click, and a click opened no window. `OpenWell --spot` now leaves the Dock state alone, whichever terminal or script calls it.
 
 ## 0.1.0 - 2026-11-01
