@@ -12,9 +12,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### New
-- `About OpenWell` in the Dock menu. The panel shows the version, the author and a link to the repository.
 
 ### Changed
+
+### Fixed
+
+## 0.2.0 - 2026-11-03
+### New
+- `About OpenWell` in the Dock menu. The panel shows the version, the author and a link to the repository.
 
 ### Fixed
 - `brew upgrade` quits OpenWell and starts the new version, which then opened a terminal window as if the Dock icon had been clicked. A start within a minute of a quit requested by another program now opens no window.
